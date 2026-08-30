@@ -1,12 +1,12 @@
 ---
 name: interrogate
-description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple reviewers challenge changes from independent lenses."
 disable-model-invocation: true
 ---
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas. Models differ in blind spots, priors, and reasoning patterns. Agreement across models is high-confidence signal; lone-model findings are worth reading but lower confidence.
+Spawn one reviewer per lens to adversarially review code changes. Every reviewer runs on the session model (GLM-5.3-Flash); the adversarial signal comes from differentiated lenses, not model diversity. Each lens gets the same intent, diff, and rubric, plus its own lens addendum that decides what it hunts for. Agreement across lenses is high-confidence signal; single-lens findings are worth reading but lower confidence. For extra pressure on maintainability-heavy diffs, route a harsher pass through the **thermo-nuclear-code-quality-review** skill instead of adding a fifth reviewer.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -33,29 +33,27 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 ## Step 3, Spawn Reviewers
 
-Launch all reviewers in a single message using the Task tool. Use the `interrogate reviewers` list from `~/.cursor/rules/pstack-models.mdc` when present, one reviewer per entry, extending or shrinking the Reviewer A/B/C/D labels below to the configured entry count; otherwise use the table defaults.
+Launch all reviewers in a single message using the Agent tool. Four lenses by default:
 
-| Subagent | Default model |
-|----------|---------------|
-| Reviewer A | `claude-fable-5-thinking-max` |
-| Reviewer B | `gpt-5.6-sol-max` |
-| Reviewer C | `grok-4.6-fast-xhigh` |
-| Reviewer D | `claude-opus-5-thinking-xhigh` |
+| Reviewer | Lens |
+|----------|------|
+| Reviewer A | Correctness — logic errors, edge cases, race conditions, error paths, broken invariants |
+| Reviewer B | Security — injection surfaces, auth gaps, unsafe deserialization, secret handling, trust boundaries |
+| Reviewer C | Maintainability — abstraction quality, reader load, hidden state, test seams, dead weight |
+| Reviewer D | Spec / verification — does the diff do what the intent says, and is behavior proven at runtime (tests, control skill, receipts), not just claimed |
 
 For each reviewer:
-- `subagent_type`: `generalPurpose`
-- `model`: the configured `interrogate reviewers` entry, or the table default with no configured line
+- `subagent_type`: `"general-purpose"`
+- `model`: omit — all reviewers inherit the session model (GLM-5.3-Flash)
 - `readonly`: `true`
-
-If a model slug is rejected as unresolvable when you try to spawn the subagent, check the valid slugs in the Task tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with the valid slug, and open a separate PR to update the configured value or default table. Do not block the review on the slug issue. If the configured value is `inherit-parent` or `auto`, omit `model` instead; never treat those aliases as broken slugs or enter this fallback for them.
+- Isolated context: no shared scratchpads, no cross-reviewer communication. The independence that model diversity used to provide now comes from isolated contexts and differentiated prompts; protect it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent
 2. The diff or file contents
 3. The review rubric from `references/rubric.md`
 4. The code-quality lens from `references/code-quality-review.md`
-
-The same filled template goes to all reviewers, so every model applies the code-quality lens.
+5. The reviewer's lens addendum from the table above, as an opening paragraph: "Your lens for this review: <lens text>. Prioritize findings inside your lens; report out-of-lens findings only when severe."
 
 Each reviewer produces structured findings as described in the prompt template.
 
@@ -64,10 +62,12 @@ Each reviewer produces structured findings as described in the prompt template.
 As results come back, build a unified picture:
 
 1. **Parse all findings** from the reviewers
-2. **Identify consensus**. Findings raised by 2+ models independently are highest signal.
-3. **Identify lone-model findings**. Still worth reading, but weight accordingly.
-4. **Deduplicate**. Different models may describe the same issue differently. Merge these and note which models raised it.
-5. **Note disagreements**. If one model flags something and another explicitly says the opposite, that's useful context for the verdict.
+2. **Identify consensus**. Findings raised by 2+ reviewers, from different lenses, are highest signal.
+3. **Identify single-lens findings**. Still worth reading, but weight accordingly.
+4. **Deduplicate**. Different lenses may describe the same issue differently. Merge these and note which reviewers raised it.
+5. **Note disagreements**. If one lens flags something and another explicitly says the opposite, that's useful context for the verdict.
+
+Because all reviewers share one model, correlated blind spots are likelier than in a multi-model panel. Weight findings that cite concrete evidence (a failing path, a repro, a spec line) above taste-based ones, and say in the verdict that the panel is single-model.
 
 ## Step 5, Lead Judgment
 
@@ -83,7 +83,7 @@ Categorize every finding using these buckets:
 - **Dismissed**. Wrong, nitpicky, or missing context. Brief explanation why.
 
 For each finding, include:
-- Which model(s) raised it
+- Which reviewer(s) raised it, and their lens
 - The category (act on / consider / noted / dismissed)
 - A one-line rationale for the categorization
 
@@ -95,13 +95,13 @@ Present the verdict in this structure:
 > [The stated intent paragraph from Step 2]
 
 ### Reviewers
-- Reviewer [label]: [model name], [N findings] (one bullet per reviewer)
+- Reviewer [label]: [lens], [N findings] (one bullet per reviewer)
 
 ### Act On
-[Findings that should be addressed. For each: description, which models raised it, why it matters.]
+[Findings that should be addressed. For each: description, which lenses raised it, why it matters.]
 
 ### Consider
-[Findings worth thinking about. For each: description, which models raised it, tradeoff involved.]
+[Findings worth thinking about. For each: description, which lenses raised it, tradeoff involved.]
 
 ### Noted
 [Valid but low-priority. Brief list.]
@@ -109,5 +109,5 @@ Present the verdict in this structure:
 ### Dismissed
 [Rejected findings with brief rationale. This shows the user what was filtered out and why, so they can override your judgment if they disagree.]
 
-### Agreement Map
-[Where did models agree, where did they diverge, and what does the pattern of agreement/disagreement tell us?]
+### Lens Divergence Map
+[Where did lenses agree, where did they diverge, and what does the pattern of agreement/disagreement tell us? Note that this panel ran on a single model; correlated blind spots are possible.]

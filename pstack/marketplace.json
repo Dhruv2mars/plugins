@@ -1,0 +1,11 @@
+{
+  "name": "dhruv2mars-plugins",
+  "owner": "Dhruv2mars",
+  "plugins": [
+    {
+      "name": "pstack",
+      "source": "./pstack",
+      "description": "Rigorous agent workflows — pstack ported to ZCode (GLM-5.3-Flash)"
+    }
+  ]
+}

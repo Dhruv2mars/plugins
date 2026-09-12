@@ -1,7 +1,7 @@
 {
   "name": "pstack",
-  "version": "1.0.0",
-  "description": "Rigorous agent workflows for ZCode — port of poteto's pstack (upstream cursor/plugins/pstack). All roles inherit the session model (GLM-5.3-Flash).",
+  "version": "1.1.0",
+  "description": "Rigorous agent workflows for ZCode — port of poteto's pstack, synced to upstream 0.15.2. All roles inherit the session model (GLM-5.3-Flash).",
   "author": { "name": "Dhruv2mars (port); Lauren Tan / poteto (upstream)" },
   "license": "MIT",
   "skills": "skills"

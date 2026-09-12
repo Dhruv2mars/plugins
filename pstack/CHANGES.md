@@ -4,6 +4,41 @@ ZCode + GLM-5.3-Flash port of `cursor/plugins/pstack`. Compatibility port only â
 behavior is preserved except where the Cursor harness had no equivalent. All
 roles inherit the session model; there is no per-role model routing.
 
+## 1.1.0 â€” sync to upstream 0.15.2 (pin 889ec4b, 2026-09-11)
+
+- Absorbed the full upstream delta since 68836dd (~100 files, mostly the
+  0.15.x density pass plus the forge migration from Graphite `gt` to
+  `gh`/Origin `origin`).
+- gh-default shipping (overrides the port's old Graphite-mandate text and
+  upstream's Origin-first text): verify per-PR with `gh`, land one PR at a
+  time bottom-up with `gh pr merge --squash` / `--auto` for MWR, watch via
+  `scripts/watch-pr/watch-pr` under Goal Mode. Graphite `gt` only as fallback
+  when the repo already uses stacked branches AND `command -v gt` succeeds.
+  Applied to shipping.md, opening-a-pr.md (Forge section), multi-phase-plan.md
+  (PR mechanics), autopilot-full/stack.md, babysit.md; bugbot-triage.md takes
+  upstream's forge-agnostic `gt ls -s` replacement verbatim.
+- how Critique Mode removed: adopted upstream's deletion (e8d856f).
+  Deleted `how/references/critic-prompt.md`,
+  `how/references/critique-rubric.md`, and the port's critique section; the
+  port follows poteto's own audit. `architect`'s "Critique mode" pointer
+  dropped with the upstream rewrite.
+- 4 operator-vendored skills now real copies (were symlinks to
+  `/Users/dhruv2mars/.agents/skills/`): code-review, frontend-design,
+  thermo-nuclear-review, thermo-nuclear-code-quality-review. Upstream ships no
+  skill of the same name. Attribution in NOTICE.md (frontend-design stays
+  Apache-2.0; rest MIT).
+- 2 new upstream principles added live with adaptations (frontmatter strip
+  only): principle-attack-the-premise, principle-test-behavior-not-
+  implementation; both wired into poteto-mode's Principles index. New
+  `assets/logo.png` copied verbatim.
+- New upstream rule absorbed: poteto-mode gains "Every claim carries its
+  evidence or its label in the same sentence" (measured / inferred / guess).
+- setup-pstack, make-bot-ui, automate-me, tdd, unslop, automations/benny,
+  docs/guide stay in attic/ even though upstream keeps them live; the attic
+  copies were refreshed to 0.15.2 content.
+- README.md was byte-identical to the base pin, so it was taken verbatim
+  from upstream 0.15.2.
+
 ## Packaging
 
 - Added `.zcode-plugin/plugin.json` and root `marketplace.json` (local ZCode
